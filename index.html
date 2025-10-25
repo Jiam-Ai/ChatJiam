@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+     <link rel="icon" type="image/svg+xml" href="https://files.catbox.moe/56yny3.jpeg" />
+    <title>Jiam</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@300;400;500;600&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --primary-bg: #020010;
+        --secondary-bg: #0a0f1f;
+        --primary-text: #e0e0e0;
+        --accent-purple: #9333ea; /* purple-600 */
+        --accent-cyan: #0891b2; /* cyan-600 */
+        --accent-magenta: #c026d3; /* fuchsia-600 */
+        --border-color: rgba(148, 51, 234, 0.2);
+        --glow-color-1: rgba(147, 51, 234, 0.5);
+        --glow-color-2: rgba(8, 145, 178, 0.5);
+      }
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: var(--primary-bg);
+        color: var(--primary-text);
+      }
+      .font-title { font-family: 'Orbitron', sans-serif; }
+      .font-body { font-family: 'Inter', sans-serif; }
+      .font-code { font-family: 'Fira Code', monospace; }
+      
+      ::-webkit-scrollbar { width: 8px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, var(--accent-cyan), var(--accent-purple)); border-radius: 999px; }
+
+      @keyframes scale-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+      @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes slide-in-left { from { opacity: 0; transform: translateX(-20px) scale(0.95); } to { opacity: 1; transform: translateX(0) scale(1); } }
+      @keyframes slide-in-right { from { opacity: 0; transform: translateX(20px) scale(0.95); } to { opacity: 1; transform: translateX(0) scale(1); } }
+      
+      @keyframes magical-glow {
+        0% { box-shadow: 0 0 20px 0px var(--glow-color-1), inset 0 0 10px 0px var(--glow-color-2); }
+        50% { box-shadow: 0 0 35px 5px var(--glow-color-2), inset 0 0 20px 2px var(--glow-color-1); }
+        100% { box-shadow: 0 0 20px 0px var(--glow-color-1), inset 0 0 10px 0px var(--glow-color-2); }
+      }
+      
+      @keyframes magical-glow-container {
+        from {
+            box-shadow: 0 0 40px -15px var(--glow-color-1), inset 0 0 15px -10px var(--glow-color-2);
+            border-color: var(--border-color);
+        }
+        to {
+            box-shadow: 0 0 40px -15px var(--glow-color-2), inset 0 0 15px -10px var(--glow-color-1);
+            border-color: rgba(8, 145, 178, 0.25);
+        }
+      }
+
+      @keyframes status-pulse {
+        0%, 100% { box-shadow: 0 0 8px 0px rgba(74, 222, 128, 0.5); }
+        50% { box-shadow: 0 0 12px 2px rgba(74, 222, 128, 0.9); }
+      }
+      
+      @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+      
+      @keyframes toast-in-right { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+      /* Modernized Orb Animations */
+      @keyframes orb-breath {
+          0%, 100% { transform: scale(1); box-shadow: 0 0 10px 0px var(--glow-color-2); }
+          50% { transform: scale(1.05); box-shadow: 0 0 20px 5px var(--glow-color-1); }
+      }
+      @keyframes orb-pulse-user {
+          0%, 100% { transform: scale(1.0); box-shadow: 0 0 15px 2px rgba(74, 222, 128, 0.6); }
+          50% { transform: scale(1.2); box-shadow: 0 0 30px 8px rgba(74, 222, 128, 0.9); }
+      }
+      @keyframes orb-swirl-ai {
+          0% { transform: rotate(0deg) scale(1.1); box-shadow: 0 0 20px 4px var(--glow-color-2); }
+          100% { transform: rotate(360deg) scale(1.1); box-shadow: 0 0 20px 4px var(--glow-color-2); }
+      }
+
+      .animate-scale-in { animation: scale-in 0.3s ease-out both; }
+      .animate-fade-in { animation: fade-in 0.3s ease-in-out both; }
+      .animate-slide-in-left { animation: slide-in-left 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+      .animate-slide-in-right { animation: slide-in-right 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+      .animate-toast-in { animation: toast-in-right 0.5s cubic-bezier(0.21, 1.02, 0.73, 1) both; }
+      
+      .status-indicator { animation: status-pulse 2s infinite; }
+      .chat-container-glow { animation: magical-glow-container 15s ease-in-out infinite alternate; }
+
+      /* New Neural Network Background */
+      #neural-network-bg {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background-color: var(--primary-bg);
+        background-image:
+          radial-gradient(var(--secondary-bg) 1px, transparent 1px),
+          radial-gradient(var(--secondary-bg) 1px, transparent 1px);
+        background-size: 40px 40px;
+        background-position: 0 0, 20px 20px;
+        z-index: -1;
+      }
+      #neural-network-bg::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at center, rgba(147, 51, 234, 0.1), transparent 50%);
+        animation: pulse-bg 10s infinite alternate ease-in-out;
+      }
+      @keyframes pulse-bg {
+        from { transform: scale(1); opacity: 0.8; }
+        to { transform: scale(1.5); opacity: 0.4; }
+      }
+      
+      /* Responsive adjustments */
+      @media (max-width: 640px) {
+        body { -webkit-tap-highlight-color: transparent; }
+        ::-webkit-scrollbar { width: 4px; }
+        #root, .h-screen { height: 100vh; height: -webkit-fill-available; }
+      }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.24.0",
+    "firebase/": "https://aistudiocdn.com/firebase@^12.4.0/",
+    "process": "https://aistudiocdn.com/process@^0.11.10",
+    "react-syntax-highlighter/": "https://aistudiocdn.com/react-syntax-highlighter@^15.6.6/",
+    "react-syntax-highlighter": "https://aistudiocdn.com/react-syntax-highlighter@^15.6.6",
+    "vite": "https://aistudiocdn.com/vite@^7.1.10",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.0.4"
+  }
+}
+</script>
+</head>
+  <body class="text-white">
+    <div id="neural-network-bg"></div>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
