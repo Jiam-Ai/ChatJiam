@@ -7,6 +7,8 @@ import MessageAvatar from './MessageAvatar';
 import { useSpeech } from '../hooks/useSpeech';
 import { useLiveConversation } from '../hooks/useLiveConversation';
 import { useChat } from '../hooks/useChat';
+import VideoGenerationModal from './VideoGenerationModal';
+import CodeMode from './modes/CodeMode';
 
 interface ChatInterfaceProps {
   currentUser: User;
@@ -49,7 +51,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 }) => {
   const { 
     messages, isLoading, isStreaming, loadingTask, processUserMessage, addMessage, updateMessage, 
-    startNewChat, memoryConfirmation, confirmMemory, rejectMemory, isThinkingMode, toggleThinkingMode 
+    startNewChat, memoryConfirmation, confirmMemory, rejectMemory, isThinkingMode, toggleThinkingMode,
+    isApiKeySelectionRequired, clearApiKeyRequirement, videoStatus
   } = chatHook;
   
   const mainRef = useRef<HTMLDivElement>(null);
@@ -57,6 +60,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [stagedImage, setStagedImage] = useState<File | null>(null);
   const [stagedFile, setStagedFile] = useState<File | null>(null);
   const [isCommandMode, setIsCommandMode] = useState(false);
+  const [mode, setMode] = useState<'chat' | 'code'>('chat');
 
   const { isLive, isConnecting, isSpeaking, startLiveSession, stopLiveSession } = useLiveConversation(addMessage, updateMessage);
 
@@ -84,7 +88,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     if (mainRef.current) {
       mainRef.current.scrollTop = mainRef.current.scrollHeight;
     }
-  }, [messages, isLoading, isStreaming]);
+  }, [messages, isLoading, isStreaming, mode]);
 
   useEffect(() => {
     if (!messages || messages.length === 0) return;
@@ -119,6 +123,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       else startLiveSession();
   };
 
+  const handleSendForAnalysis = (prompt: string, code: string) => {
+      processUserMessage(prompt, { analysisFile: code });
+      setMode('chat');
+  };
+
   return (
     <div 
       className="w-full max-w-4xl h-[95vh] sm:h-[95vh] bg-[rgba(10,15,31,0.6)] backdrop-blur-2xl
@@ -132,14 +141,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         isLoading={isLoading || isStreaming || isConnecting}
       />
       <main ref={mainRef} className="flex-grow flex flex-col overflow-y-auto p-2 sm:p-4 min-h-0 scroll-smooth">
-        <ChatWindow 
-          messages={messages} 
-          onImageClick={onImageClick}
-          memoryConfirmation={memoryConfirmation}
-          onConfirmMemory={confirmMemory}
-          onRejectMemory={rejectMemory}
-        />
-        {isLoading && <TypingIndicator task={loadingTask} />}
+        {mode === 'code' ? (
+            <CodeMode onSendForAnalysis={handleSendForAnalysis} />
+        ) : (
+            <>
+                <ChatWindow 
+                    messages={messages} 
+                    onImageClick={onImageClick}
+                    memoryConfirmation={memoryConfirmation}
+                    onConfirmMemory={confirmMemory}
+                    onRejectMemory={rejectMemory}
+                />
+                {isLoading && <TypingIndicator task={loadingTask} />}
+            </>
+        )}
       </main>
       <Footer 
         inputValue={inputValue}
@@ -168,18 +183,28 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         onToggleLive={handleToggleLive}
         isThinkingMode={isThinkingMode}
         onToggleThinkingMode={toggleThinkingMode}
+        isApiKeySelectionRequired={isApiKeySelectionRequired}
+        onClearApiKeyRequirement={clearApiKeyRequirement}
+        mode={mode}
+        onToggleMode={() => setMode(prev => prev === 'chat' ? 'code' : 'chat')}
+      />
+      <VideoGenerationModal
+        isVisible={isLoading && loadingTask === 'video'}
+        status={videoStatus}
       />
     </div>
   );
 };
 
-const TypingIndicator: React.FC<{ task: 'text' | 'image' | 'lyrics' | 'search' | 'thinking' | null }> = ({ task }) => {
+const TypingIndicator: React.FC<{ task: 'text' | 'image' | 'lyrics' | 'search' | 'thinking' | 'video' | null }> = ({ task }) => {
     const getTaskContent = () => {
         switch (task) {
             case 'search':
                 return ( <p className="text-sm text-purple-300">Searching the web...</p> );
             case 'image':
                  return ( <p className="text-sm text-purple-300">Generating image with Imagen 4...</p> );
+            case 'video':
+                return ( <p className="text-sm text-purple-300">Generating video with Veo...</p> );
             case 'thinking':
                  return ( <p className="text-sm text-purple-300">Engaging Thinking Mode...</p> );
             case 'lyrics':

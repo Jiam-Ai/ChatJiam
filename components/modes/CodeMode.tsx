@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import CodeEditor from '../CodeEditor';
 import { useCodeSuggestions } from '../../hooks/useCodeSuggestions';

@@ -91,11 +91,15 @@ export const useLiveConversation = (
   const mediaStreamSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const nextStartTimeRef = useRef(0);
   const audioSourcesRef = useRef(new Set<AudioBufferSourceNode>());
+  const isStoppingRef = useRef(false);
 
   const currentTranscription = useRef({ user: '', ai: '' });
   const currentMessageIds = useRef({ user: '', ai: '' });
 
   const stopLiveSession = useCallback(async () => {
+    if (isStoppingRef.current) return;
+    isStoppingRef.current = true;
+
     if (sessionPromiseRef.current) {
         try {
             const session = await sessionPromiseRef.current;
@@ -140,6 +144,7 @@ export const useLiveConversation = (
     setIsSpeaking('none');
     currentTranscription.current = { user: '', ai: '' };
     currentMessageIds.current = { user: '', ai: '' };
+    isStoppingRef.current = false;
   }, [updateMessage]);
 
   const startLiveSession = useCallback(async () => {

@@ -1,11 +1,12 @@
 import React, { forwardRef, useState } from 'react';
-import type { ChatMessage, ImageContent, LyricsContent, MultimodalUserContent, UserFileContent } from '../types';
+import type { ChatMessage, ImageContent, LyricsContent, MultimodalUserContent, UserFileContent, VideoContent } from '../types';
 import ImageSlider from './ImageSlider';
 import LyricsDisplay from './LyricsDisplay';
 import CodeBlock from './CodeBlock';
 import MessageAvatar from './MessageAvatar';
 import MemoryConfirmationPrompt from './MemoryConfirmationPrompt';
 import MarkdownRenderer from './MarkdownRenderer';
+import VideoDisplay from './VideoDisplay';
 
 interface ChatWindowProps {
   messages: ChatMessage[];
@@ -179,6 +180,7 @@ const MessageBubble: React.FC<{ message: ChatMessage; onImageClick: (url: string
       case 'live-user': case 'live-ai': return renderTextContent(message.content as string, true);
       case 'image': return <ImageSlider images={(message.content as { images: ImageContent[] }).images} onImageClick={onImageClick} />;
       case 'lyrics': return <LyricsDisplay data={message.content as LyricsContent} />;
+      case 'video': return <VideoDisplay data={message.content as VideoContent} />;
       case 'multimodal-user':
         const content = message.content as MultimodalUserContent;
         return (

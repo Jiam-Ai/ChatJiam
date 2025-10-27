@@ -5,21 +5,37 @@ import { firebaseService } from '../services/firebaseService';
 import { useToasts } from '../context/ToastContext';
 import type { User, ChatMessage } from '../types';
 
+// FIX: Define the AIStudio interface to match the expected global type for window.aistudio.
+// This resolves the conflict with another declaration of the same property by moving the interface into the global scope.
+declare global {
+  interface AIStudio {
+    hasSelectedApiKey: () => Promise<boolean>;
+    openSelectKey: () => Promise<void>;
+  }
+  interface Window {
+    aistudio?: AIStudio;
+  }
+}
+
 const imageKeywords = ['create', 'draw', 'paint', 'generate', 'design', 'show me a picture of', 'an image of', 'render', 'illustrate', 'logo'];
 const imageKeywordRegex = new RegExp(`\\b(${imageKeywords.join('|')})\\b`, 'i');
 const lyricsKeywords = ['lyrics for', 'get lyrics', 'find lyrics', 'what are the lyrics to'];
 const lyricsKeywordRegex = new RegExp(`\\b(${lyricsKeywords.join('|')})\\b`, 'i');
 const searchKeywords = ['search for', 'look up', 'find information on', 'what is the latest on', 'google', 'search the web for'];
 const searchKeywordRegex = new RegExp(`\\b(${searchKeywords.join('|')})\\b`, 'i');
+const videoKeywords = ['create a video of', 'make a video of', 'generate a video of', 'animate a scene of', 'a video of'];
+const videoKeywordRegex = new RegExp(`^(${videoKeywords.join('|')})`, 'i');
 
 
 export const useChat = (currentUser: User | null) => {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isStreaming, setIsStreaming] = useState(false);
-    const [loadingTask, setLoadingTask] = useState<'text' | 'image' | 'lyrics' | 'search' | 'thinking' | null>(null);
+    const [loadingTask, setLoadingTask] = useState<'text' | 'image' | 'lyrics' | 'search' | 'thinking' | 'video' | null>(null);
     const [memoryConfirmation, setMemoryConfirmation] = useState<{ fact: string; messageId: string } | null>(null);
     const [isThinkingMode, setIsThinkingMode] = useState(false);
+    const [isApiKeySelectionRequired, setApiKeySelectionRequired] = useState(false);
+    const [videoStatus, setVideoStatus] = useState('');
     const { addToast } = useToasts();
 
 
@@ -85,6 +101,7 @@ export const useChat = (currentUser: User | null) => {
     
     const processUserMessage = async (prompt: string, options: { imageFile?: File | null; analysisFile?: File | string | null } = {}) => {
         if ((!prompt && !options.imageFile && !options.analysisFile) || isLoading || isStreaming || !currentUser || memoryConfirmation) return;
+        if (isApiKeySelectionRequired) return;
 
         setIsLoading(true);
 
@@ -116,6 +133,28 @@ export const useChat = (currentUser: User | null) => {
                 const query = extractLyricsQuery(prompt);
                 const lyrics = await externalApiService.fetchLyrics(query);
                 addMessage({ type: 'lyrics', sender: 'jiam', content: lyrics });
+            } else if (videoKeywordRegex.test(prompt) && !options.analysisFile) { // Video Generation
+                setLoadingTask('video');
+
+                const hasKey = await window.aistudio?.hasSelectedApiKey();
+                if (!hasKey) {
+                    setApiKeySelectionRequired(true);
+                    setIsLoading(false);
+                    setLoadingTask(null);
+                    return;
+                }
+                
+                const result = await geminiService.generateVideo(prompt, setVideoStatus);
+
+                if (result.error) {
+                    addToast(result.error, 'error');
+                    // If it's the specific key error, prompt the user again.
+                    if (result.error.includes("Please select a valid key")) {
+                        setApiKeySelectionRequired(true);
+                    }
+                } else if (result.video) {
+                    addMessage({ type: 'video', sender: 'jiam', content: result.video });
+                }
             } else { // General Chat, Search, Thinking, File Analysis
                 const useSearch = searchKeywordRegex.test(prompt) && !options.analysisFile;
                 if (useSearch) setLoadingTask('search');
@@ -230,6 +269,10 @@ export const useChat = (currentUser: User | null) => {
         const msg = messages.find(m => m.id === messageId);
         if (msg) updateMessage(messageId, { isArchived: !msg.isArchived });
     }, [messages, updateMessage]);
+    
+    const clearApiKeyRequirement = () => {
+        setApiKeySelectionRequired(false);
+    };
 
     return { 
         messages, 
@@ -238,6 +281,9 @@ export const useChat = (currentUser: User | null) => {
         loadingTask, 
         memoryConfirmation, 
         isThinkingMode,
+        isApiKeySelectionRequired,
+        clearApiKeyRequirement,
+        videoStatus,
         processUserMessage, 
         addMessage, 
         updateMessage, 

@@ -160,7 +160,9 @@ export const useSpeech = (
     return () => {
         recognition.stop();
         if(commandTimeoutRef.current) clearTimeout(commandTimeoutRef.current);
-        if(audioContextRef.current) audioContextRef.current.close();
+        if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+            audioContextRef.current.close();
+        }
     }
   }, [settings, onTranscriptUpdate, onCommand, setCommandMode]);
 

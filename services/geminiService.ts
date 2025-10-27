@@ -1,5 +1,5 @@
 import { GoogleGenAI, Modality } from "@google/genai";
-import type { ChatMessage, ImageContent } from '../types';
+import type { ChatMessage, ImageContent, VideoContent } from '../types';
 
 const apiKey = process.env.API_KEY;
 
@@ -240,6 +240,57 @@ ${code}
     } catch (error) {
         console.error("Error generating image with Imagen:", error);
         throw new Error("Failed to generate image. The service may be unavailable or the prompt may be unsuitable.");
+    }
+  },
+
+  generateVideo: async (
+    prompt: string,
+    statusCallback: (status: string) => void
+  ): Promise<{ video?: VideoContent; error?: string }> => {
+    try {
+      // Create a new instance right before the call to ensure the latest key is used.
+      const ai = getAIClient();
+      statusCallback("Initiating video generation...");
+      
+      let operation = await ai.models.generateVideos({
+        model: 'veo-3.1-fast-generate-preview',
+        prompt: prompt,
+        config: {
+          numberOfVideos: 1,
+          resolution: '720p',
+          aspectRatio: '16:9'
+        }
+      });
+
+      statusCallback("Generating video... This may take a few minutes.");
+      
+      while (!operation.done) {
+        await new Promise(resolve => setTimeout(resolve, 10000));
+        statusCallback("Checking progress...");
+        operation = await ai.operations.getVideosOperation({ operation: operation });
+      }
+
+      statusCallback("Finalizing video...");
+
+      const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
+      if (!downloadLink) {
+        throw new Error("Video generation completed but no download link was provided.");
+      }
+
+      // The API key must be appended for the download link to work.
+      const finalUrl = `${downloadLink}&key=${process.env.API_KEY}`;
+      
+      return { video: { videoUrl: finalUrl, prompt: prompt } };
+
+    } catch (error: any) {
+      console.error("Error generating video with Veo:", error);
+      
+      // Specific error handling for missing API key
+      if (error.message && error.message.includes("Requested entity was not found.")) {
+        return { error: "API key is invalid or missing permissions for video generation. Please select a valid key." };
+      }
+      
+      return { error: "Failed to generate video. The service may be busy or the prompt could not be processed." };
     }
   },
   
